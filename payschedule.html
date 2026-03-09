@@ -1,0 +1,478 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Payroll System — Scenario Analysis</title>
+<style>
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{font-family:system-ui,sans-serif;background:#f1f5f9;color:#1e293b;min-height:100vh;padding:20px}
+  .wrap{max-width:880px;margin:0 auto}
+  h1{font-size:22px;font-weight:800;margin-bottom:4px}
+  .subtitle{color:#64748b;font-size:13px;margin-bottom:20px}
+
+  /* TABS */
+  .tab-bar{display:flex;gap:8px;margin-bottom:24px;flex-wrap:wrap}
+  .tab-btn{padding:8px 20px;border-radius:8px;border:none;cursor:pointer;font-size:13px;font-weight:600;background:#fff;color:#475569;box-shadow:0 1px 3px rgba(0,0,0,.07);transition:all .2s}
+  .tab-btn.active{color:#fff;box-shadow:0 2px 8px rgba(0,0,0,.15)}
+  .tab-pane{display:none}.tab-pane.active{display:block}
+
+  /* CARDS */
+  .card{background:#fff;border-radius:12px;padding:20px;box-shadow:0 1px 4px rgba(0,0,0,.06);margin-bottom:14px}
+  .scenario{border:2px solid;border-radius:12px;background:#fff;margin-bottom:12px;overflow:hidden}
+  .scenario-head{padding:13px 18px;cursor:pointer;display:flex;align-items:center;justify-content:space-between;gap:10px;user-select:none}
+  .scenario-head-left{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+  .sc-id{color:#fff;border-radius:6px;padding:2px 10px;font-weight:800;font-size:13px}
+  .sc-title{font-weight:700;font-size:14px}
+  .sc-gate{font-size:10px;background:#fff;border-radius:4px;padding:1px 8px;font-weight:700;border:1px solid}
+  .chevron{font-size:16px;transition:transform .2s}
+  .scenario-body{padding:16px 18px;display:none}
+  .scenario-body.open{display:block}
+
+  /* INFO BOXES */
+  .info-box{border-radius:8px;padding:10px 14px;margin-bottom:10px}
+  .info-box .label{font-size:11px;font-weight:800;letter-spacing:1px;margin-bottom:4px}
+  .info-box .text{font-size:13px;line-height:1.6}
+  .box-blue{background:#f0f9ff;border:1px solid #0891b2}.box-blue .label{color:#0891b2}.box-blue .text{color:#0c4a6e}
+  .box-red{background:#fef2f2;border:1px solid #dc2626}.box-red .label{color:#b91c1c}.box-red .text{color:#7f1d1d}
+  .box-yellow{background:#fef9c3;border:1px solid #ca8a04}.box-yellow .label{color:#92400e}.box-yellow .text{color:#78350f;font-family:monospace;font-size:12px}
+  .box-slate{background:#f8fafc;border:1px solid #cbd5e1}.box-slate .label{color:#64748b}.box-slate .text{color:#334155}
+
+  /* TIMELINE */
+  .timeline{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:12px}
+  .tl-pill{display:inline-flex;align-items:center;gap:5px;padding:4px 10px;border-radius:6px;font-size:11px}
+  .tl-approved{background:#dcfce7;border:1px solid #16a34a}.tl-approved .tl-note{color:#16a34a;font-weight:600}
+  .tl-open{background:#dbeafe;border:1px solid #3b82f6}.tl-open .tl-note{color:#3b82f6;font-weight:600}
+  .tl-event{background:#fef9c3;border:1px solid #ca8a04}.tl-event .tl-note{color:#ca8a04;font-weight:600}
+  .tl-days{font-weight:700;color:#1e293b}.tl-sep{color:#94a3b8}
+
+  /* CASE */
+  .case-box{border:1px solid #e2e8f0;border-radius:10px;overflow:hidden;margin-bottom:8px}
+  .case-head{padding:8px 14px;background:#f8fafc;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:6px}
+  .case-label{font-weight:700;font-size:13px}
+  .badge{font-size:11px;font-weight:700;padding:2px 10px;border-radius:20px}
+  .badge-ok{background:#dcfce7;color:#15803d;border:1px solid #16a34a}
+  .badge-no{background:#fee2e2;color:#b91c1c;border:1px solid #dc2626}
+  .case-steps{padding:10px 14px}
+  .step{display:flex;gap:10px;margin-bottom:8px;align-items:flex-start}
+  .step-icon{font-size:16px;min-width:22px}
+  .step-text{font-size:13px;color:#334155;line-height:1.5}
+  .step-text.formula{background:#f8fafc;border:1px solid #e2e8f0;border-radius:4px;padding:3px 8px;font-family:monospace}
+
+  /* GATE FLOW */
+  .flow-item{margin-bottom:4px}
+  .flow-arrow{text-align:center;color:#94a3b8;font-size:20px;line-height:22px}
+  .flow-start,.flow-end{border-radius:10px;padding:12px 16px;text-align:center}
+  .flow-start{background:#6366f1}.flow-end{background:#16a34a}
+  .flow-start .fl,.flow-end .fl{font-weight:800;font-size:14px;color:#fff}
+  .flow-start .fd{font-size:12px;color:#c7d2fe;margin-top:2px}
+  .flow-end .fd{font-size:12px;color:#bbf7d0;margin-top:2px}
+  .flow-process{border:1.5px solid #cbd5e1;border-radius:10px;background:#f8fafc;padding:12px 16px}
+  .flow-process .fl{font-weight:700;font-size:13px;margin-bottom:3px}
+  .flow-process .fd{font-size:11px;color:#475569;font-family:monospace;white-space:pre-line}
+  .flow-process .fn{font-size:11px;color:#7c3aed;margin-top:3px}
+  .flow-compute{border:1.5px solid #7c3aed;border-radius:10px;background:#f5f3ff;padding:12px 16px}
+  .flow-compute .fl{font-weight:700;font-size:13px;color:#6d28d9;margin-bottom:6px}
+  .flow-compute .fd{font-family:monospace;font-size:11px;background:#1e293b;color:#a5f3fc;padding:8px 12px;border-radius:6px;white-space:pre-line;margin-bottom:4px}
+  .flow-compute .fn{font-size:11px;color:#6d28d9}
+  .flow-gate{border:2px solid;border-radius:10px;overflow:hidden}
+  .gate-head{padding:12px 16px;cursor:pointer;display:flex;justify-content:space-between;align-items:center}
+  .gate-label{font-weight:700;font-size:13px}
+  .gate-tag{font-size:10px;font-weight:800;color:#fff;padding:1px 8px;border-radius:4px;margin-right:8px}
+  .gate-cond{font-size:12px;color:#475569;margin-top:2px;margin-left:60px}
+  .gate-body{display:none;grid-template-columns:1fr 1fr}
+  .gate-body.open{display:grid}
+  .gate-yes,.gate-no{padding:10px 14px}
+  .gate-yes{border-right:1px solid #e2e8f0;background:#fef2f2}
+  .gate-no{background:#f0fdf4}
+  .gate-side-label{font-weight:700;font-size:11px;margin-bottom:3px}
+  .gate-side-title{font-weight:700;font-size:12px;margin-bottom:2px}
+  .gate-side-detail{font-size:11px;color:#475569}
+  .gate-ref{font-size:10px;border-radius:3px;padding:2px 6px;font-weight:700;margin-top:4px;display:inline-block;background:#fee2e2;color:#b91c1c}
+
+  /* MATRIX */
+  table{width:100%;border-collapse:collapse;font-size:13px}
+  th{text-align:left;padding:8px 12px;color:#64748b;font-weight:700;border-bottom:2px solid #e2e8f0}
+  td{padding:8px 12px;border-bottom:1px solid #f1f5f9}
+  .overlap-badge{background:#fffbeb;color:#92400e;border:1px solid #d97706;border-radius:6px;padding:3px 10px;font-size:12px;font-weight:700}
+  .na{color:#94a3b8;font-size:12px}
+
+  /* CODE BLOCK */
+  .code{background:#1e293b;border-radius:10px;padding:14px 16px;font-family:monospace;font-size:12px;color:#e2e8f0;line-height:2;margin-top:10px}
+  .c-comment{color:#94a3b8}.c-key{color:#fbbf24}.c-hi{color:#86efac}.c-err{color:#f87171}.c-val{color:#7dd3fc}.c-fn{color:#fbbf24}.c-arg{color:#a5f3fc}
+
+  /* NOTICE */
+  .notice{border-radius:10px;padding:12px 16px;margin-bottom:14px;font-size:13px}
+  .notice-blue{background:#eef2ff;border:1px solid #6366f1;color:#4338ca}
+  .notice-red{background:#fef2f2;border:1px solid #dc2626;color:#b91c1c}
+  .notice-cyan{background:#f0f9ff;border:1px solid #0891b2;color:#0c4a6e}
+  .notice-amber{background:#fffbeb;border:1px solid #d97706;color:#92400e}
+
+  .expand-bar{display:flex;gap:8px;margin-bottom:14px;align-items:center}
+  .expand-btn{font-size:12px;padding:4px 12px;border-radius:6px;border:1px solid #cbd5e1;background:#fff;cursor:pointer;color:#475569}
+  .expand-hint{font-size:12px;color:#94a3b8}
+
+  .section-title{font-size:11px;font-weight:700;color:#94a3b8;letter-spacing:1px;margin-bottom:8px;margin-top:4px}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>Payroll System — Overlap &amp; Missing Days Analysis</h1>
+  <p class="subtitle">effective_date as a lookup key · segment trimming · transition payrun creation</p>
+
+  <!-- TAB BAR -->
+  <div class="tab-bar">
+    <button class="tab-btn active" style="background:#0891b2" onclick="switchTab('how',this)">How It Works</button>
+    <button class="tab-btn" onclick="switchTab('overlap',this)">Overlap Cases</button>
+    <button class="tab-btn" onclick="switchTab('missing',this)">Missing Days Cases</button>
+    <button class="tab-btn" onclick="switchTab('flow',this)">Movement Flow</button>
+  </div>
+
+  <!-- ═══ TAB 1: HOW IT WORKS ═══ -->
+  <div id="tab-how" class="tab-pane active">
+    <div class="card">
+      <div style="font-weight:700;font-size:15px;margin-bottom:4px">How the System Processes a PayGroup Change</div>
+      <p style="font-size:13px;color:#64748b;margin-bottom:14px;line-height:1.7">The <strong>effective_date is not the exact move date</strong> — it is a <strong>lookup key</strong> the system uses to find the correct payrun in the new PayGroup.</p>
+      <div id="system-steps"></div>
+      <div style="font-weight:700;font-size:13px;margin:14px 0 8px">Normal Flow — Monthly → Weekly, effective_date = Jan 10</div>
+      <div class="timeline">
+        <span class="tl-pill tl-approved"><span class="tl-days">PG2 Jan 1–30</span><span class="tl-sep">—</span><span class="tl-note">Trimmed → Jan 1–9</span></span>
+        <span class="tl-pill tl-event"><span class="tl-days">effective_date Jan 10</span><span class="tl-sep">—</span><span class="tl-note">Lookup → finds PG1 Jan 8–14</span></span>
+        <span class="tl-pill tl-open"><span class="tl-days">PG1 Jan 8–14</span><span class="tl-sep">—</span><span class="tl-note">Updated → segment Jan 10–14</span></span>
+      </div>
+      <div class="code">
+        <div><span class="c-comment">// Segment formula — eliminates overlap automatically</span></div>
+        <div><span class="c-val">segment_start</span> = <span class="c-fn">max</span>( <span class="c-arg">dest_payrun_start</span>,  <span class="c-arg">last_paid + 1</span>,  <span class="c-arg">effective_date</span> )</div>
+        <div><span class="c-val">segment_end</span>   = dest_payrun_end</div>
+        <br>
+        <div><span class="c-comment">// Missing days → transition payrun</span></div>
+        <div><span class="c-err">IF</span>  dest_payrun.status = APPROVED  <span class="c-err">OR</span>  no payrun found</div>
+        <div style="padding-left:16px">→ <span class="c-hi">system creates transition payrun</span> using new PayGroupVersion</div>
+      </div>
+    </div>
+
+    <!-- Matrix -->
+    <div class="card">
+      <div style="font-weight:700;font-size:14px;margin-bottom:4px">All Schedule Combinations — Does Overlap Occur?</div>
+      <p style="font-size:12px;color:#64748b;margin-bottom:14px">Moving from shorter cycle (row) to longer cycle (column).</p>
+      <table>
+        <thead><tr><th>From \ To</th><th style="text-align:center">Bi-Weekly</th><th style="text-align:center">Semi-Monthly</th><th style="text-align:center">Monthly</th></tr></thead>
+        <tbody>
+          <tr><td style="font-weight:700">Weekly</td><td style="text-align:center"><span class="overlap-badge">⚠️ Can Overlap</span></td><td style="text-align:center"><span class="overlap-badge">⚠️ Can Overlap</span></td><td style="text-align:center"><span class="overlap-badge">⚠️ Can Overlap</span></td></tr>
+          <tr><td style="font-weight:700">Bi-Weekly</td><td style="text-align:center"><span class="na">N/A</span></td><td style="text-align:center"><span class="overlap-badge">⚠️ Can Overlap</span></td><td style="text-align:center"><span class="overlap-badge">⚠️ Can Overlap</span></td></tr>
+          <tr><td style="font-weight:700">Semi-Monthly</td><td style="text-align:center"><span class="na">N/A</span></td><td style="text-align:center"><span class="na">N/A</span></td><td style="text-align:center"><span class="overlap-badge">⚠️ Can Overlap</span></td></tr>
+        </tbody>
+      </table>
+      <div class="code">
+        <div><span class="c-key">IF</span>  dest_payrun_start <span class="c-err">&lt;</span> last_paid+1  →  <span class="c-key">OVERLAP</span>   — max() handles ✓</div>
+        <div><span class="c-key">IF</span>  dest_payrun_start <span class="c-hi">=</span> last_paid+1  →  <span class="c-hi">PERFECT</span>   — no overlap, no gap ✓</div>
+        <div><span class="c-key">IF</span>  dest_payrun_start <span class="c-err">&gt;</span> last_paid+1  →  <span class="c-err">GAP</span>       — transition payrun ✗</div>
+      </div>
+    </div>
+
+    <!-- Summary tables -->
+    <div class="card">
+      <div style="font-weight:700;color:#4338ca;font-size:14px;margin-bottom:10px">✅ Overlap Cases — auto-resolved by max() formula</div>
+      <table>
+        <thead style="background:#eef2ff"><tr><th style="color:#4338ca">ID</th><th style="color:#4338ca">Transition</th><th style="color:#4338ca">Why Overlap Exists</th><th style="color:#4338ca">How Resolved</th></tr></thead>
+        <tbody>
+          <tr style="background:#fff"><td style="color:#4338ca;font-weight:700;font-family:monospace">O1</td><td>Weekly → Monthly</td><td>Monthly always starts day 1; weekly ends mid-month inside it</td><td>max() sets segment_start past last_paid+1</td></tr>
+          <tr style="background:#f8fafc"><td style="color:#4338ca;font-weight:700;font-family:monospace">O2</td><td>Weekly → Weekly</td><td>PG2 week starts on a different day — running before PG1 ended</td><td>max() skips already-paid days</td></tr>
+          <tr style="background:#fff"><td style="color:#4338ca;font-weight:700;font-family:monospace">O3</td><td>Monthly → Weekly</td><td>Weekly cycle start falls before effective_date</td><td>max() clips weekly start to effective_date</td></tr>
+          <tr style="background:#f8fafc"><td style="color:#4338ca;font-weight:700;font-family:monospace">O4</td><td>Semi-Monthly → Semi-Monthly</td><td>Different cycle start dates create a shifted overlap window</td><td>max() eliminates entire overlap window</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="card">
+      <div style="font-weight:700;color:#b91c1c;font-size:14px;margin-bottom:10px">❌ Missing Days Cases — system creates transition payrun</div>
+      <table>
+        <thead style="background:#fef2f2"><tr><th style="color:#b91c1c">ID</th><th style="color:#b91c1c">Root Cause</th><th style="color:#b91c1c">Exact Trigger</th><th style="color:#b91c1c">Gate</th><th style="color:#b91c1c">System Action</th></tr></thead>
+        <tbody>
+          <tr style="background:#fff"><td style="color:#b91c1c;font-weight:700;font-family:monospace">M1</td><td>Dest payrun approved before version change</td><td style="font-family:monospace;font-size:11px">dest_payrun.status = APPROVED</td><td style="color:#d97706;font-weight:700">Gate 3</td><td>Transition payrun for missing days</td></tr>
+          <tr style="background:#f8fafc"><td style="color:#b91c1c;font-weight:700;font-family:monospace">M2</td><td>New hire payrun approved before onboarding</td><td style="font-family:monospace;font-size:11px">hire_date in APPROVED payrun</td><td style="color:#d97706;font-weight:700">Gate 3</td><td>Transition payrun for missed first days</td></tr>
+          <tr style="background:#fff"><td style="color:#b91c1c;font-weight:700;font-family:monospace">M3</td><td>effective_date falls in gap between cycles</td><td style="font-family:monospace;font-size:11px">No payrun covers effective_date</td><td style="color:#d97706;font-weight:700">Gate 4</td><td>Transition payrun for gap days</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- ═══ TAB 2: OVERLAP ═══ -->
+  <div id="tab-overlap" class="tab-pane">
+    <div class="notice notice-blue"><strong>Overlap cases</strong> are automatically resolved by the <code>max()</code> formula. No transition payrun needed.</div>
+    <div class="expand-bar">
+      <button class="expand-btn" onclick="expandAll('overlap-sc')">Expand All</button>
+      <button class="expand-btn" onclick="collapseAll('overlap-sc')">Collapse All</button>
+      <span class="expand-hint">Click a card to expand</span>
+    </div>
+    <div id="overlap-sc"></div>
+  </div>
+
+  <!-- ═══ TAB 3: MISSING ═══ -->
+  <div id="tab-missing" class="tab-pane">
+    <div class="notice notice-red"><strong>Missing days occur</strong> when the destination payrun found via effective_date lookup is APPROVED or doesn't exist. The system automatically creates a <strong>transition payrun</strong> using the new PayGroupVersion.</div>
+    <div class="expand-bar">
+      <button class="expand-btn" onclick="expandAll('missing-sc')">Expand All</button>
+      <button class="expand-btn" onclick="collapseAll('missing-sc')">Collapse All</button>
+      <span class="expand-hint">Click a card to expand</span>
+    </div>
+    <div id="missing-sc"></div>
+  </div>
+
+  <!-- ═══ TAB 4: FLOW ═══ -->
+  <div id="tab-flow" class="tab-pane">
+    <div class="notice notice-cyan">Flow starts when a <strong>new PayGroupVersion is committed</strong>. System trims the source payrun, looks up the destination payrun via effective_date, and updates it. Click gates to expand.</div>
+    <div style="max-width:620px;margin:0 auto" id="flow-container"></div>
+  </div>
+</div>
+
+<script>
+// ── DATA ──────────────────────────────────────────────────────────────────────
+const systemSteps = [
+  {icon:"📅",title:"effective_date is a lookup key",detail:"Not the exact move day — used to find which payrun period the employee belongs to in the new PayGroup."},
+  {icon:"🔍",title:"System finds the destination payrun",detail:"Queries: which open payrun covers effective_date? E.g. effective_date = Jan 10 → finds PG1 weekly Jan 8–14."},
+  {icon:"✂️",title:"Source payrun is trimmed",detail:"Old PayGroup payrun segment trimmed to effective_date − 1. E.g. PG2 monthly Jan 1–30 → employee segment becomes Jan 1–9."},
+  {icon:"➕",title:"Destination payrun is updated",detail:"Currently open destination payrun includes employee from effective_date. E.g. PG1 weekly Jan 8–14 → employee segment Jan 10–14."},
+  {icon:"🔄",title:"Missing days → transition payrun",detail:"If destination payrun is APPROVED or no payrun found, system creates a transition payrun using new PayGroupVersion."},
+];
+
+const overlapData = [
+  {id:"O1",title:"Weekly → Monthly",borderColor:"#6366f1",bgColor:"#eef2ff",textColor:"#4338ca",
+    when:"Monthly cycle always starts on day 1. When employee moves from weekly to monthly, the monthly payrun was already running since day 1 — before the weekly ended.",
+    cycleExplain:"Monthly PayGroup cycle start = Jan 1. Weekly PayGroup ended Jan 7. Monthly payrun Jan 1–31 was running since Jan 1 — 7 days before the weekly ended. Formula clips monthly segment to Jan 8.",
+    timeline:[{days:"Jan 1–7",status:"approved",note:"PG1 Weekly — Approved ✓"},{days:"Jan 8",status:"event",note:"effective_date → finds PG2 Jan 1–31"},{days:"Jan 1–31",status:"open",note:"PG2 Monthly — overlaps Jan 1–7!"}],
+    cases:[{label:"Overlap Jan 1–7 eliminated by formula",outcome:"success",steps:[
+      {icon:"🔍",text:"effective_date = Jan 8 → finds PG2 monthly payrun Jan 1–31 (OPEN)"},
+      {icon:"⚠️",text:"OVERLAP RISK: PG2 payrun_start = Jan 1. Days Jan 1–7 would be double-paid if used directly."},
+      {icon:"🧮",text:"segment_start = max(payrun_start=1, last_paid+1=8, eff_date=8) = Jan 8  ← overlap eliminated",formula:true},
+      {icon:"✅",text:"PG2 payrun updated: employee segment Jan 8 → Jan 31"},
+      {icon:"📊",text:"Coverage: PG1 Jan 1–7 | PG2 Jan 8–31. No duplicate. No gap."},
+    ]}],
+  },
+  {id:"O2",title:"Weekly → Weekly (different cycle start days)",borderColor:"#16a34a",bgColor:"#f0fdf4",textColor:"#15803d",
+    when:"Two weekly groups start their week on different days. PG2's week started mid-way through PG1's week — both cycles running at the same time creates an overlap window.",
+    cycleExplain:"PG1 runs Mon–Sun (Jan 6–12). PG2 runs Wed–Tue (Jan 8–14). PG2 started Jan 8 — 5 days before PG1 ended Jan 12. effective_date = Jan 13 → finds PG2 payrun Jan 8–14.",
+    timeline:[{days:"PG1: Jan 6–12 (Mon)",status:"approved",note:"Approved ✓"},{days:"Jan 13",status:"event",note:"effective_date → finds PG2 Jan 8–14"},{days:"PG2: Jan 8–14 (Wed)",status:"open",note:"Started Jan 8 — overlaps Jan 8–12!"}],
+    cases:[{label:"Overlap Jan 8–12 eliminated by formula",outcome:"success",steps:[
+      {icon:"🔍",text:"effective_date = Jan 13 → finds PG2 weekly payrun Jan 8–14 (OPEN)"},
+      {icon:"⚠️",text:"OVERLAP RISK: PG2 payrun_start = Jan 8. Days Jan 8–12 already paid by PG1."},
+      {icon:"🧮",text:"segment_start = max(payrun_start=8, last_paid+1=13, eff_date=13) = Jan 13  ← 5-day overlap eliminated",formula:true},
+      {icon:"✅",text:"PG2 payrun updated: employee segment Jan 13 → Jan 14"},
+      {icon:"📊",text:"Coverage: PG1 Jan 6–12 | PG2 Jan 13–14. No duplicate. Next PG2 cycle: Jan 15–21."},
+    ]}],
+  },
+  {id:"O3",title:"Monthly → Weekly (source segment overlap)",borderColor:"#0891b2",bgColor:"#ecfeff",textColor:"#0e7490",
+    when:"Employee moves from monthly to weekly mid-month. The weekly cycle start falls before effective_date — a small overlap exists between the weekly cycle start and the employee's last monthly segment day.",
+    cycleExplain:"PG2 monthly Jan 1–30 trimmed at Jan 9 (eff_date − 1). PG1 weekly cycle Jan 8–14 found via effective_date = Jan 10. Jan 8–9 are inside PG1's window but Jan 1–9 belongs to PG2.",
+    timeline:[{days:"Jan 1–30",status:"open",note:"PG2 Monthly — trimmed at Jan 9"},{days:"Jan 10",status:"event",note:"effective_date → finds PG1 Jan 8–14"},{days:"Jan 8–14",status:"open",note:"PG1 Weekly — started Jan 8, Jan 8–9 overlap!"}],
+    cases:[{label:"Overlap Jan 8–9 eliminated by formula",outcome:"success",steps:[
+      {icon:"✂️",text:"PG2 monthly payrun: employee segment trimmed to Jan 1–9 (effective_date − 1)"},
+      {icon:"🔍",text:"effective_date = Jan 10 → finds PG1 weekly payrun Jan 8–14 (OPEN)"},
+      {icon:"⚠️",text:"OVERLAP RISK: PG1 payrun_start = Jan 8. Jan 8–9 also in PG2 segment."},
+      {icon:"🧮",text:"segment_start = max(payrun_start=8, last_paid+1=10, eff_date=10) = Jan 10  ← Jan 8–9 overlap eliminated",formula:true},
+      {icon:"✅",text:"PG1 payrun updated: employee segment Jan 10 → Jan 14"},
+      {icon:"📊",text:"Coverage: PG2 Jan 1–9 | PG1 Jan 10–14. No duplicate on Jan 8–9."},
+    ]}],
+  },
+  {id:"O4",title:"Semi-Monthly → Semi-Monthly (different cycle start dates)",borderColor:"#d97706",bgColor:"#fffbeb",textColor:"#92400e",
+    when:"Both groups run semi-monthly but with different calendar start dates. PG2's cycle started several days before PG1's cycle ended — creating a multi-day overlap window.",
+    cycleExplain:"PG1 starts 1st & 16th (Jan 1–15). PG2 starts 11th & 26th (Jan 11–25). effective_date = Jan 16 → finds PG2 payrun Jan 11–25. PG2 started Jan 11 — 5 days before PG1 ended Jan 15.",
+    timeline:[{days:"PG1: Jan 1–15",status:"approved",note:"Approved ✓"},{days:"Jan 16",status:"event",note:"effective_date → finds PG2 Jan 11–25"},{days:"PG2: Jan 11–25",status:"open",note:"Started Jan 11 — overlaps Jan 11–15!"}],
+    cases:[{label:"Overlap Jan 11–15 eliminated by formula",outcome:"success",steps:[
+      {icon:"🔍",text:"effective_date = Jan 16 → finds PG2 semi-monthly payrun Jan 11–25 (OPEN)"},
+      {icon:"⚠️",text:"OVERLAP RISK: PG2 payrun_start = Jan 11. Days Jan 11–15 already paid by PG1."},
+      {icon:"🧮",text:"segment_start = max(payrun_start=11, last_paid+1=16, eff_date=16) = Jan 16  ← 5-day overlap eliminated",formula:true},
+      {icon:"✅",text:"PG2 payrun updated: employee segment Jan 16 → Jan 25"},
+      {icon:"📊",text:"Coverage: PG1 Jan 1–15 | PG2 Jan 16–25. No duplicate pay."},
+    ]}],
+  },
+];
+
+const missingData = [
+  {id:"M1",title:"Destination payrun is APPROVED — cannot be updated",borderColor:"#dc2626",bgColor:"#fef2f2",textColor:"#b91c1c",gate:"Gate 3",
+    rootCause:"The effective_date lookup finds a payrun in the destination PayGroup, but that payrun is already APPROVED and locked. The system cannot insert the employee into it. Those days go unprocessed.",
+    when:"Occurs on any schedule combination when the destination PayGroup's payrun closes before the PayGroupVersion change is committed. Most common in weekly groups where payruns approve within 1–2 days of cycle end.",
+    trigger:"effective_date lookup finds a payrun where payrun.status = APPROVED",
+    timeline:[{days:"PG2 Jan 1–30",status:"approved",note:"Source trimmed → Jan 1–9"},{days:"Jan 10",status:"event",note:"effective_date → finds PG1 Jan 8–14"},{days:"PG1 Jan 8–14",status:"approved",note:"APPROVED — cannot update!"}],
+    cases:[{label:"PG1 Jan 8–14 already approved — Jan 10–14 missing",outcome:"reject",steps:[
+      {icon:"🔍",text:"effective_date = Jan 10 → system finds PG1 weekly payrun Jan 8–14"},
+      {icon:"🔒",text:"Gate 3: PG1 Jan 8–14 payrun status = APPROVED → cannot insert employee"},
+      {icon:"❌",text:"MISSING DAYS: Jan 10–14 cannot be added. Next regular PG1 cycle starts Jan 15."},
+      {icon:"🔄",text:"System creates transition payrun: PG1 | Jan 10 → Jan 14 using new PayGroupVersion."},
+    ]}],
+  },
+  {id:"M2",title:"New hire — payrun approved before onboarding entry",borderColor:"#7c3aed",bgColor:"#f5f3ff",textColor:"#6d28d9",gate:"Gate 3",
+    rootCause:"A new employee's start date falls mid-cycle, but the payrun covering that period gets approved before HR finishes onboarding and the PayGroupVersion is created. The version is created too late.",
+    when:"Most common in weekly PayGroups where payruns close fast. A hire starting Thursday may have their version created Monday — after the weekly payrun was already approved. Also occurs in monthly groups for late-month hires.",
+    trigger:"hire_date falls within a payrun AND payrun.status = APPROVED at time PayGroupVersion is created",
+    timeline:[{days:"Jan 9–15 cycle",status:"open",note:"Active when hired"},{days:"Jan 11",status:"event",note:"Hire date / effective_date"},{days:"Jan 9–15 cycle",status:"approved",note:"Approved Jan 13 — before version created!"}],
+    cases:[
+      {label:"Case A — PayGroupVersion created while payrun still OPEN",outcome:"success",steps:[
+        {icon:"🔍",text:"effective_date = Jan 11 → finds PG1 payrun Jan 9–15 (OPEN)"},
+        {icon:"🧮",text:"segment_start = max(9, NULL→9, 11) = Jan 11",formula:true},
+        {icon:"✅",text:"PG1 payrun updated: employee segment Jan 11 → Jan 15"},
+        {icon:"📊",text:"Employee correctly paid 5 days. Jan 9–10 excluded."},
+      ]},
+      {label:"Case B — PayGroupVersion created after payrun APPROVED",outcome:"reject",steps:[
+        {icon:"🔍",text:"effective_date = Jan 11 → finds PG1 payrun Jan 9–15"},
+        {icon:"🔒",text:"Gate 3: payrun Jan 9–15 status = APPROVED → cannot insert"},
+        {icon:"❌",text:"MISSING DAYS: Jan 11–15 unprocessed. Next regular PG1 cycle starts Jan 16."},
+        {icon:"🔄",text:"System creates transition payrun: PG1 | Jan 11 → Jan 15 using new PayGroupVersion."},
+      ]},
+    ],
+  },
+  {id:"M3",title:"effective_date lookup finds no payrun (falls in cycle gap)",borderColor:"#d97706",bgColor:"#fffbeb",textColor:"#92400e",gate:"Gate 4",
+    rootCause:"The effective_date does not fall inside any open or draft payrun in the destination PayGroup. It lands in a dead zone between two consecutive cycles — after one payrun ended and before the next one is created.",
+    when:"Occurs when payruns are generated one at a time. If effective_date lands after the last payrun_end and before the next payrun_start, the lookup returns nothing. Common in weekly → bi-weekly transitions.",
+    trigger:"No payrun exists in destination PayGroup where payrun_start ≤ effective_date ≤ payrun_end",
+    timeline:[{days:"PG1 Jan 1–7",status:"approved",note:"Source approved ✓"},{days:"Jan 8",status:"event",note:"effective_date → NO payrun found!"},{days:"PG2 Jan 9–22",status:"open",note:"Next open cycle starts Jan 9 — gap on Jan 8!"}],
+    cases:[{label:"No payrun covers Jan 8 — transition payrun created",outcome:"reject",steps:[
+      {icon:"🔍",text:"effective_date = Jan 8 → system looks for PG2 payrun covering Jan 8 → none found"},
+      {icon:"⚠️",text:"Gate 4: effective_date (Jan 8) < next available payrun_start (Jan 9) — gap detected"},
+      {icon:"❌",text:"MISSING DAYS: Jan 8 falls in gap between PG2 payruns. No payrun to update."},
+      {icon:"🔄",text:"System creates transition payrun: PG2 | Jan 8 → Jan 8 using new PayGroupVersion, then regular Jan 9–22 cycle continues."},
+    ]}],
+  },
+];
+
+const flowData = [
+  {type:"start",label:"PayGroupVersion Change Committed",detail:"New PayGroupVersion: Employee · New PayGroup · effective_date"},
+  {type:"process",label:"🔧 Trim Source Payrun Segment",detail:"Find open payrun in source PayGroup covering effective_date − 1\nSet SegmentEnd = effective_date − 1",note:"If source payrun already APPROVED — no action needed"},
+  {type:"process",label:"🔧 Lookup Destination Payrun",detail:"Find payrun where payrun_start ≤ effective_date ≤ payrun_end in new PayGroup",note:"Uses new PayGroupVersion"},
+  {type:"gate",num:"3",label:"Gate 3 — Destination Payrun Open?",condition:"Destination payrun status = APPROVED?",color:"#dc2626",
+    yes:{label:"❌ Cannot Update",detail:"Locked — system creates transition payrun.",ref:"→ M1 / M2"},
+    no:{label:"✅ Pass",detail:"DRAFT or PROCESSING — can be updated."}},
+  {type:"gate",num:"4",label:"Gate 4 — Payrun Found?",condition:"No payrun found covering effective_date?",color:"#d97706",
+    yes:{label:"⚠️ Gap Detected",detail:"No payrun to update — system creates transition payrun.",ref:"→ M3"},
+    no:{label:"✅ Pass",detail:"Valid open payrun found."}},
+  {type:"compute",label:"⚙️ Compute Employee Segment",detail:"segment_start = max(dest_payrun_start, last_paid_date + 1, effective_date)\nsegment_end   = dest_payrun_end",note:"max() automatically eliminates any overlap"},
+  {type:"gate",num:"5",label:"Gate 5 — Valid Window?",condition:"segment_start > segment_end?",color:"#d97706",
+    yes:{label:"⚠️ No Days",detail:"System creates transition payrun and enrols in next cycle.",ref:""},
+    no:{label:"✅ Continue",detail:"Valid range — employee has payable days."}},
+  {type:"process",label:"🔧 Update Destination Payrun",detail:"Insert PayRunEmployee: PayRunID · EmployeeID · SegmentStart · SegmentEnd",note:"Payrun now includes employee from effective_date using new PayGroupVersion"},
+  {type:"end",label:"✅ PayGroup Change Complete",detail:"Source trimmed at eff_date − 1 · Destination updated from eff_date · Future payruns from new PayGroupVersion"},
+];
+
+// ── HELPERS ───────────────────────────────────────────────────────────────────
+function tlPill(t){return`<span class="tl-pill tl-${t.status}"><span class="tl-days">${t.days||t.label||''}</span><span class="tl-sep">—</span><span class="tl-note">${t.note}</span></span>`;}
+function infoBox(cls,label,text){return`<div class="info-box ${cls}"><div class="label">${label}</div><div class="text">${text}</div></div>`;}
+function badge(outcome){return outcome==='success'?'<span class="badge badge-ok">✅ ALLOWED</span>':'<span class="badge badge-no">❌ TRANSITION PAYRUN CREATED</span>';}
+function renderSteps(steps){return steps.map(s=>`<div class="step"><span class="step-icon">${s.icon}</span><span class="step-text${s.formula?' formula':''}">${s.text}</span></div>`).join('');}
+
+function renderScenario(s, isMissing){
+  const casesHtml = s.cases.map(c=>`
+    <div class="case-box">
+      <div class="case-head"><span class="case-label">${c.label}</span>${badge(c.outcome)}</div>
+      <div class="case-steps">${renderSteps(c.steps)}</div>
+    </div>`).join('');
+
+  const extraBoxes = isMissing
+    ? `${infoBox('box-red','ROOT CAUSE',s.rootCause)}${infoBox('box-blue','WHEN DOES THIS OCCUR?',s.when)}${infoBox('box-yellow','EXACT TRIGGER:',s.trigger)}`
+    : `${infoBox('box-blue','WHEN DOES THIS OCCUR?',s.when)}${infoBox('box-slate','WHY IT HAPPENS — CYCLE LOGIC',s.cycleExplain)}`;
+
+  const gateTag = isMissing&&s.gate?`<span class="sc-gate" style="color:${s.textColor};border-color:${s.borderColor}">${s.gate}</span>`:'';
+
+  return `
+  <div class="scenario" style="border-color:${s.borderColor}">
+    <div class="scenario-head" style="background:${s.bgColor}" onclick="toggleScenario(this)">
+      <div class="scenario-head-left">
+        <span class="sc-id" style="background:${s.borderColor}">${s.id}</span>
+        <span class="sc-title" style="color:${s.textColor}">${s.title}</span>
+        ${gateTag}
+      </div>
+      <span class="chevron" style="color:${s.textColor}">▼</span>
+    </div>
+    <div class="scenario-body">
+      ${extraBoxes}
+      <div class="section-title">TIMELINE</div>
+      <div class="timeline">${s.timeline.map(tlPill).join('')}</div>
+      ${casesHtml}
+    </div>
+  </div>`;
+}
+
+function renderFlow(){
+  return flowData.map((step,i)=>{
+    let html='';
+    if(step.type==='start'){
+      html=`<div class="flow-start"><div class="fl">🚀 ${step.label}</div><div class="fd">${step.detail}</div></div>`;
+    } else if(step.type==='end'){
+      html=`<div class="flow-end"><div class="fl">${step.label}</div><div class="fd">${step.detail}</div></div>`;
+    } else if(step.type==='process'){
+      html=`<div class="flow-process"><div class="fl">${step.label}</div><div class="fd">${step.detail}</div>${step.note?`<div class="fn">↳ ${step.note}</div>`:''}</div>`;
+    } else if(step.type==='compute'){
+      html=`<div class="flow-compute"><div class="fl">${step.label}</div><div class="fd">${step.detail}</div>${step.note?`<div class="fn">↳ ${step.note}</div>`:''}</div>`;
+    } else if(step.type==='gate'){
+      html=`<div class="flow-gate" style="border-color:${step.color}">
+        <div class="gate-head" style="background:${step.color}" onclick="toggleGate(this)">
+          <div><span class="gate-tag" style="background:rgba(0,0,0,.2)">GATE ${step.num}</span><span class="gate-label" style="color:#fff">${step.label}</span>
+          <div class="gate-cond">${step.condition}</div></div>
+          <span style="color:#fff;font-size:14px">▼</span>
+        </div>
+        <div class="gate-body">
+          <div class="gate-yes">
+            <div class="gate-side-label" style="color:#b91c1c">YES →</div>
+            <div class="gate-side-title">${step.yes.label}</div>
+            <div class="gate-side-detail">${step.yes.detail}</div>
+            ${step.yes.ref?`<span class="gate-ref">${step.yes.ref}</span>`:''}
+          </div>
+          <div class="gate-no">
+            <div class="gate-side-label" style="color:#15803d">NO →</div>
+            <div class="gate-side-title">${step.no.label}</div>
+            <div class="gate-side-detail">${step.no.detail}</div>
+          </div>
+        </div>
+      </div>`;
+    }
+    const arrow = i<flowData.length-1?'<div class="flow-arrow">↓</div>':'';
+    return `<div class="flow-item">${html}</div>${arrow}`;
+  }).join('');
+}
+
+// ── INIT ──────────────────────────────────────────────────────────────────────
+document.addEventListener('DOMContentLoaded',()=>{
+  // System steps
+  document.getElementById('system-steps').innerHTML = systemSteps.map(s=>`
+    <div style="display:flex;gap:12px;align-items:flex-start;padding:10px 14px;background:#f8fafc;border-radius:8px;border:1px solid #e2e8f0;margin-bottom:8px">
+      <span style="font-size:20px;min-width:28px">${s.icon}</span>
+      <div><div style="font-weight:700;font-size:13px;color:#1e293b;margin-bottom:2px">${s.title}</div>
+      <div style="font-size:12px;color:#475569">${s.detail}</div></div>
+    </div>`).join('');
+  // Scenarios
+  document.getElementById('overlap-sc').innerHTML = overlapData.map(s=>renderScenario(s,false)).join('');
+  document.getElementById('missing-sc').innerHTML = missingData.map(s=>renderScenario(s,true)).join('');
+  // Flow
+  document.getElementById('flow-container').innerHTML = renderFlow();
+});
+
+// ── INTERACTIONS ──────────────────────────────────────────────────────────────
+function switchTab(name, btn){
+  document.querySelectorAll('.tab-pane').forEach(p=>p.classList.remove('active'));
+  document.getElementById('tab-'+name).classList.add('active');
+  const colors={how:'#0891b2',overlap:'#6366f1',missing:'#dc2626',flow:'#d97706'};
+  document.querySelectorAll('.tab-btn').forEach(b=>{b.classList.remove('active');b.style.background='#fff';b.style.color='#475569';});
+  btn.classList.add('active');btn.style.background=colors[name];btn.style.color='#fff';
+}
+
+function toggleScenario(head){
+  const body=head.nextElementSibling;
+  const ch=head.querySelector('.chevron');
+  const open=body.classList.toggle('open');
+  ch.style.transform=open?'rotate(180deg)':'';
+}
+
+function toggleGate(head){
+  const body=head.nextElementSibling;
+  const ch=head.querySelector('span:last-child');
+  const open=body.classList.toggle('open');
+  ch.textContent=open?'▲':'▼';
+}
+
+function expandAll(containerId){
+  document.querySelectorAll(`#${containerId} .scenario-body`).forEach(b=>{b.classList.add('open');b.previousElementSibling.querySelector('.chevron').style.transform='rotate(180deg)';});
+}
+function collapseAll(containerId){
+  document.querySelectorAll(`#${containerId} .scenario-body`).forEach(b=>{b.classList.remove('open');b.previousElementSibling.querySelector('.chevron').style.transform='';});
+}
+</script>
+</body>
+</html>
